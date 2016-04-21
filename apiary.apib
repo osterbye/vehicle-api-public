@@ -1,0 +1,728 @@
+FORMAT: 1A
+HOST: http://api.eevo.one/
+
+# Eevo vehicle API
+
+This API enables monitoring and controlling the Eevo vehicle remotely.
+
+# Group Authentication
+
+## Tokens [/oauth/token{?grant_type,client_id,client_secret,email,password}]
+
+### Get an Access Token [POST]
+Performs the login. Takes in a plain text email and password, matching the owner's login information for [https://fleets.eevo.one/user/login](https://fleets.eevo.one/user/login).
+
+Returns an `access_token` used to authenticate the user, by means of the `Authorization: Bearer {access_token}` header, which must be present in all future requests.
+
++ Parameters
+    + grant_type: `password` (string) - The type of oAuth grant. Always "password"
+    + client_id: `aaa` (string) - The oAuth client ID
+    + client_secret: `bbb` (string) - The oAuth client secret
+    + email: `mymail@eevo.one` (string) - The email for fleets.eevo.one
+    + password: `MyPassword` (string) - The password for fleets.eevo.one
+
++ Response 200 (application/json)
+    + Body
+
+            {
+              "access_token": "ccc",
+              "token_type": "bearer",
+              "expires_in": 7776000
+            }
+
+# Group Fleet
+A fleet contains multiple vehicles. This resource is primarily responsible for listing the vehicles and the basic details about them.
+
+
+## Fleet Vehicles [/api/1/vehicles]
+
+### List all Vehicles [GET]
+Retrieve a list of all vehicles belonging to the fleet.
+
++ Request
+    + Headers
+    
+            Authorization: Bearer {access_token}
+
++ Response 200 (application/json)
+    
+    + Attributes (object)
+        + vehicles (required, array[Vehicle]) - Array of vehicles in the fleet
+        + count: `1` (required, number) - The number of vehicles in the fleet
+
+    
+
+# Group Vehicle
+This resource gives access to retreive data from and send commands to individual vehicles.
+
+## State and Settings [/api/1/vehicles/{vehicle_id}/state]
+These resources are read-only and determine the state of the vehicle's various sub-systems.
+
+## Charge State [GET /api/1/vehicles/{vehicle_id}/state/charge_state]
+Returns the state of charge in the battery.
+
++ Request
+    + Headers
+
+            Authorization: Bearer {access_token}
+
++ Parameters
+    + vehicle_id: `1` (number) - The id of the Vehicle.
+
++ Response 200 (application/json)
+    + Body
+
+            {
+              "response": {
+                "charging_state": "Complete",  // "Charging", ??
+                "fast_charger_present": false, // connected to Supercharger?
+                "battery_range": 239.02,       // rated km
+                "est_battery_range": 155.79,   // range estimated from recent driving
+                "ideal_battery_range": 275.09, // ideal km
+                "battery_level": 91,           // integer charge percentage
+                "battery_current": -0.6,       // current flowing into battery
+                "charge_starting_range": null,
+                "charge_starting_soc": null,
+                "charger_voltage": 0,          // only has value while charging
+                "charger_pilot_current": 40,   // max current allowed by charger & adapter
+                "charger_actual_current": 0,   // current actually being drawn
+                "charger_power": 0,            // kW (rounded down) of charger
+                "time_to_full_charge": null,   // valid only while charging
+                "charge_rate": -1.0            // float mi/hr charging or -1 if not charging
+              }
+            }
+
+## Climate Settings [GET /api/1/vehicles/{vehicle_id}/state/climate_state]
+Returns the current temperature and climate control state.
+
++ Request
+    + Headers
+
+            Authorization: Bearer {access_token}
+
++ Parameters
+
+    + vehicle_id: `1` (number) - The id of the Vehicle.
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+              "response": {
+                "inside_temp": 17.0,          // degC inside car
+                "outside_temp": 9.5,          // degC outside car or null
+                "driver_temp_setting": 22.6,  // degC of driver temperature setpoint
+                "passenger_temp_setting": 22.6, // degC of passenger temperature setpoint
+                "is_auto_conditioning_on": false, // apparently even if on
+                "is_front_defroster_on": false, // null or boolean as integer?
+                "fan_status": 0               // fan speed 0-6 or null
+              }
+            }
+
+## Location [GET /api/1/vehicles/{vehicle_id}/state/location]
+Returns the location and movement details of the vehicle.
+
++ Request
+    + Headers
+
+            Authorization: Bearer {access_token}
+
++ Parameters
+
+    + vehicle_id: `1` (number) - The id of the Vehicle.
+
++ Response 200 (application/json)
+
+    + Attributes (object)
+        + lat: `33.794839` (required, number) - Latitude
+        + lon: `-84.401593` (required, number) - Longitude
+        + time: `1359863204` (required, number) - Timestamp for position in Unix time
+        + speed: `8.3` (optional, number) - Meters per second (m/s)
+        + heading: `4` (optional, number) - Compass heading, 0-359
+
+## GUI Settings [GET /api/1/vehicles/{vehicle_id}/state/gui_settings]
+Returns various information about the GUI settings of the car, such as unit format and range display.
+
++ Request
+    + Headers
+
+            Authorization: Bearer {access_token}
+
++ Parameters
+
+    + vehicle_id: `1` (number) - The id of the Vehicle.
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+              "response": {
+                "gui_distance_units": "km/hr",
+                "gui_temperature_units": "C",
+                "gui_charge_rate_units": "km/hr",
+                "gui_24_hour_time": false,
+                "gui_range_display": "Rated"
+              }
+            }
+
+## Vehicle State [GET /api/1/vehicles/{vehicle_id}/state/vehicle_state]
+Returns the vehicle's physical state, such as which doors are open.
+
++ Request
+    + Headers
+
+            Authorization: Bearer {access_token}
+
++ Parameters
+
+    + vehicle_id: `1` (number) - The id of the Vehicle.
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+              "response": {
+                "df": false,                  // driver's side front door open
+                "dr": false,                  // driver's side rear door open
+                "pf": false,                  // passenger's side front door open
+                "pr": false,                  // passenger's side rear door open
+                "rt": false,                  // rear trunk is open
+                "car_verson": "1.19.42",      // car firmware version
+                "locked": true,               // car is locked
+                "charging": true,             // vehicle is charging
+                "mode": "ready2drive",        // "parked", "ready2drive", etc.
+                "est_battery_range": 155.79,  // range estimated from recent driving
+                "occupied": false,            // a driver is logged in, in the vehicle
+              }
+            }
+
+## Seat Sensors [GET /api/1/vehicles/{vehicle_id}/state/seat_sensors]
+Returns true or false, for each seat in the vehicle, indicating whether the seat is occupied.
+
++ Request
+    + Headers
+
+            Authorization: Bearer {access_token}
+
++ Parameters
+
+    + vehicle_id: `1` (number) - The id of the Vehicle.
+
++ Response 200 (application/json)
+
+    + Attributes (object)
+        + driver: `true` (required, boolean) - Driver's seat
+        + front_passenger: `false` (required, boolean) - Front passenger seat
+        + rear_left: `false` (required, boolean) - Rear left seat
+        + rear_right: `false` (required, boolean) - Rear right seat
+
+## Fuse State [GET /api/1/vehicles/{vehicle_id}/state/fuse_state]
+Returns the state of each fuse. True, if the fuse is good, and false if the fuse is blown.
+NOTE: We might want to expand on this information and provide details on how critical the system powered by each fuse is.
+
++ Request
+    + Headers
+
+            Authorization: Bearer {access_token}
+
++ Parameters
+
+    + vehicle_id: `1` (number) - The id of the Vehicle.
+
++ Response 200 (application/json)
+
+    + Attributes (object)
+        + F01: `true` (required, boolean) - Fuse 1 good
+        + F02: `true` (required, boolean) - Fuse 2 good
+        + F03: `true` (required, boolean) - Fuse 3 good
+        + F04: `true` (required, boolean) - Fuse 4 good
+        + F05: `true` (required, boolean) - Fuse 5 good
+        + F06: `true` (required, boolean) - Fuse 6 good
+        + F07: `true` (required, boolean) - Fuse 7 good
+        + F08: `true` (required, boolean) - Fuse 8 good
+
+## Taxi State [GET /api/1/vehicles/{vehicle_id}/state/taxi_state]
+Returns the state of the taximeter.
+
++ Request
+    + Headers
+
+            Authorization: Bearer {access_token}
+
++ Parameters
+
+    + vehicle_id: `1` (number) - The id of the Vehicle.
+
++ Response 200 (application/json)
+
+    + Attributes (object)
+        + taximeter_is_active: `true` (required, boolean) - Taximeter is currently running, collecting data for a taxi trip.
+
+
+## Commands [/api/1/vehicles/{vehicle_id}/command]
+These commands alter the vehicle state and return a result (true/false) to indicate success or failure.
+In case of failure, a reason containing the cause of failure is attached.
+
+## Set Charge Limit to Standard [POST /api/1/vehicles/{vehicle_id}/command/charge_standard]
+Set the charge limit to the default value.
+
++ Request
+    + Headers
+
+            Authorization: Bearer {access_token}
+
++ Parameters
+
+    + vehicle_id: `1` (number) - The id of the Vehicle.
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+              "response": {
+                "result": false,
+                "reason": "already_standard"
+              }
+            }
+
+## Set Charge Limit [POST /api/1/vehicles/{vehicle_id}/command/set_charge_limit?percent={limit_value}]
+Set the charge limit to a custom percentage.
+
++ Request
+    + Headers
+
+            Authorization: Bearer {access_token}
+
++ Parameters
+
+    + vehicle_id: `1` (number) - The id of the Vehicle.
+    + limit_value: `75` (number) - The percentage value
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+              "response": {
+                "result": true,
+                "reason": ""
+              }
+            }
+
+## Start Charging [POST /api/1/vehicles/{vehicle_id}/command/charge_start]
+Start charging. Must be plugged in, have power available, and not have reached your charge limit.
+
++ Request
+    + Headers
+
+            Authorization: Bearer {access_token}
+
++ Parameters
+
+    + vehicle_id: `1` (number) - The id of the Vehicle.
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+              "response": {
+                "result": true,
+                "reason": "" // "already_started" if a charge is in progress
+              }
+            }
+
+## Stop Charging [POST /api/1/vehicles/{vehicle_id}/command/charge_stop]
+Stop charging. Must already be charging.
+
++ Request
+    + Headers
+
+            Authorization: Bearer {access_token}
+
++ Parameters
+
+    + vehicle_id: `1` (number) - The id of the Vehicle.
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+              "response": {
+                "result": true,
+                "reason": "" // "not_charging" if a charge was not in progress
+              }
+            }
+
+## Flash Lights [POST /api/1/vehicles/{vehicle_id}/command/flash_lights]
+Flash the lights once.
+
++ Request
+    + Headers
+
+            Authorization: Bearer {access_token}
+
++ Parameters
+
+    + vehicle_id: `1` (number) - The id of the Vehicle.
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+              "response": {
+                "result": true,
+                "reason": ""
+              }
+            }
+
+
+## Unlock Doors [POST /api/1/vehicles/{vehicle_id}/command/door_unlock]
+Unlock the car's doors.
+
++ Request
+    + Headers
+
+            Authorization: Bearer {access_token}
+
++ Parameters
+
+    + vehicle_id: `1` (number) - The id of the Vehicle.
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+              "response": {
+                "result": true,
+                "reason": ""
+              }
+            }
+
+## Lock Doors [POST /api/1/vehicles/{vehicle_id}/command/door_lock]
+Lock the car's doors.
+
++ Request
+    + Headers
+
+            Authorization: Bearer {access_token}
+
++ Parameters
+
+    + vehicle_id: `1` (number) - The id of the Vehicle.
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+              "response": {
+                "result": true,
+                "reason": ""
+              }
+            }
+
+## Set Temperature [POST /api/1/vehicles/{vehicle_id}/command/set_temps?driver_temp={driver_degC}&passenger_temp={pass_degC}]
+Set the temperature target for the HVAC system.
+
++ Request
+    + Headers
+
+            Authorization: Bearer {access_token}
+
++ Parameters
+
+    + vehicle_id: `1` (number) - The id of the Vehicle.
+    + driver_degC: `23.7` (number) - The desired temperature on the driver's side in celcius.
+    + pass_degC: `18.1` (number) - The desired temperature on the passenger's side in celcius.
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+              "response": {
+                "result": true,
+                "reason": ""
+              }
+            }
+
+## Start HVAC System [POST /api/1/vehicles/{vehicle_id}/command/hvac_start]
+Start the climate control system. Will cool or heat automatically, depending on set temperature.
+
++ Request
+    + Headers
+
+            Authorization: Bearer {access_token}
+
++ Parameters
+
+    + vehicle_id: `1` (number) - The id of the Vehicle.
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+              "response": {
+                "result": true,
+                "reason": ""
+              }
+            }
+
+## Stop HVAC System  [POST /api/1/vehicles/{vehicle_id}/command/hvac_stop]
+Stop the climate control system.
+
++ Request
+    + Headers
+
+            Authorization: Bearer {access_token}
+
++ Parameters
+
+    + vehicle_id: `1` (number) - The id of the Vehicle.
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+              "response": {
+                "result": true,
+                "reason": ""
+              }
+            }
+
+
+## Set Ambient Light [POST /api/1/vehicles/{vehicle_id}/command/ambient_light?color={color}&intensity={intensity}]
+Set the color and intensity of the interior ambient lighting.
+
++ Request
+    + Headers
+
+            Authorization: Bearer {access_token}
+
++ Parameters
+
+    + vehicle_id: `1` (number) - The id of the Vehicle.
+    + color: `Blue` (enum[string])
+        The desired color of the ambient light in the vehicle.
+        + Members
+            + `AliceBlue` - #F0F8FF
+            + `AntiqueWhite` - #FAEBD7
+            + `Aqua` - #00FFFF
+            + `Aquamarine` - #7FFFD4
+            + `Azure` - #F0FFFF
+            + `Beige` - #F5F5DC
+            + `Bisque` - #FFE4C4
+            + `Black` - #000000
+            + `BlanchedAlmond` - #FFEBCD
+            + `Blue` - #0000FF
+            + `BlueViolet` - #8A2BE2
+            + `Brown` - #A52A2A
+            + `BurlyWood` - #DEB887
+            + `CadetBlue` - #5F9EA0
+            + `Chartreuse` - #7FFF00
+            + `Chocolate` - #D2691E
+            + `Coral` - #FF7F50
+            + `CornflowerBlue` - #6495ED
+            + `Cornsilk` - #FFF8DC
+            + `Crimson` - #DC143C
+            + `Cyan` - #00FFFF
+            + `DarkBlue` - #00008B
+            + `DarkCyan` - #008B8B
+            + `DarkGoldenRod` - #B8860B
+            + `DarkGray` - #A9A9A9
+            + `DarkGrey` - #A9A9A9
+            + `DarkGreen` - #006400
+            + `DarkKhaki` - #BDB76B
+            + `DarkMagenta` - #8B008B
+            + `DarkOliveGreen` - #556B2F
+            + `DarkOrange` - #FF8C00
+            + `DarkOrchid` - #9932CC
+            + `DarkRed` - #8B0000
+            + `DarkSalmon` - #E9967A
+            + `DarkSeaGreen` - #8FBC8F
+            + `DarkSlateBlue` - #483D8B
+            + `DarkSlateGray` - #2F4F4F
+            + `DarkSlateGrey` - #2F4F4F
+            + `DarkTurquoise` - #00CED1
+            + `DarkViolet` - #9400D3
+            + `DeepPink` - #FF1493
+            + `DeepSkyBlue` - #00BFFF
+            + `DimGray` - #696969
+            + `DimGrey` - #696969
+            + `DodgerBlue` - #1E90FF
+            + `FireBrick` - #B22222
+            + `FloralWhite` - #FFFAF0
+            + `ForestGreen` - #228B22
+            + `Fuchsia` - #FF00FF
+            + `Gainsboro` - #DCDCDC
+            + `GhostWhite` - #F8F8FF
+            + `Gold` - #FFD700
+            + `GoldenRod` - #DAA520
+            + `Gray` - #808080
+            + `Grey` - #808080
+            + `Green` - #008000
+            + `GreenYellow` - #ADFF2F
+            + `HoneyDew` - #F0FFF0
+            + `HotPink` - #FF69B4
+            + `IndianRed ` - #CD5C5C
+            + `Indigo ` - #4B0082
+            + `Ivory` - #FFFFF0
+            + `Khaki` - #F0E68C
+            + `Lavender` - #E6E6FA
+            + `LavenderBlush` - #FFF0F5
+            + `LawnGreen` - #7CFC00
+            + `LemonChiffon` - #FFFACD
+            + `LightBlue` - #ADD8E6
+            + `LightCoral` - #F08080
+            + `LightCyan` - #E0FFFF
+            + `LightGoldenRodYellow` - #FAFAD2
+            + `LightGray` - #D3D3D3
+            + `LightGrey` - #D3D3D3
+            + `LightGreen` - #90EE90
+            + `LightPink` - #FFB6C1
+            + `LightSalmon` - #FFA07A
+            + `LightSeaGreen` - #20B2AA
+            + `LightSkyBlue` - #87CEFA
+            + `LightSlateGray` - #778899
+            + `LightSlateGrey` - #778899
+            + `LightSteelBlue` - #B0C4DE
+            + `LightYellow` - #FFFFE0
+            + `Lime` - #00FF00
+            + `LimeGreen` - #32CD32
+            + `Linen` - #FAF0E6
+            + `Magenta` - #FF00FF
+            + `Maroon` - #800000
+            + `MediumAquaMarine` - #66CDAA
+            + `MediumBlue` - #0000CD
+            + `MediumOrchid` - #BA55D3
+            + `MediumPurple` - #9370DB
+            + `MediumSeaGreen` - #3CB371
+            + `MediumSlateBlue` - #7B68EE
+            + `MediumSpringGreen` - #00FA9A
+            + `MediumTurquoise` - #48D1CC
+            + `MediumVioletRed` - #C71585
+            + `MidnightBlue` - #191970
+            + `MintCream` - #F5FFFA
+            + `MistyRose` - #FFE4E1
+            + `Moccasin` - #FFE4B5
+            + `NavajoWhite` - #FFDEAD
+            + `Navy` - #000080
+            + `OldLace` - #FDF5E6
+            + `Olive` - #808000
+            + `OliveDrab` - #6B8E23
+            + `Orange` - #FFA500
+            + `OrangeRed` - #FF4500
+            + `Orchid` - #DA70D6
+            + `PaleGoldenRod` - #EEE8AA
+            + `PaleGreen` - #98FB98
+            + `PaleTurquoise` - #AFEEEE
+            + `PaleVioletRed` - #DB7093
+            + `PapayaWhip` - #FFEFD5
+            + `PeachPuff` - #FFDAB9
+            + `Peru` - #CD853F
+            + `Pink` - #FFC0CB
+            + `Plum` - #DDA0DD
+            + `PowderBlue` - #B0E0E6
+            + `Purple` - #800080
+            + `RebeccaPurple` - #663399
+            + `Red` - #FF0000
+            + `RosyBrown` - #BC8F8F
+            + `RoyalBlue` - #4169E1
+            + `SaddleBrown` - #8B4513
+            + `Salmon` - #FA8072
+            + `SandyBrown` - #F4A460
+            + `SeaGreen` - #2E8B57
+            + `SeaShell` - #FFF5EE
+            + `Sienna` - #A0522D
+            + `Silver` - #C0C0C0
+            + `SkyBlue` - #87CEEB
+            + `SlateBlue` - #6A5ACD
+            + `SlateGray` - #708090
+            + `SlateGrey` - #708090
+            + `Snow` - #FFFAFA
+            + `SpringGreen` - #00FF7F
+            + `SteelBlue` - #4682B4
+            + `Tan` - #D2B48C
+            + `Teal` - #008080
+            + `Thistle` - #D8BFD8
+            + `Tomato` - #FF6347
+            + `Turquoise` - #40E0D0
+            + `Violet` - #EE82EE
+            + `Wheat` - #F5DEB3
+            + `White` - #FFFFFF
+            + `WhiteSmoke` - #F5F5F5
+            + `Yellow` - #FFFF00
+            + `YellowGreen` - #9ACD32
+    + intensity: `75` (number) - Percentage intensity of ambient light.
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+              "response": {
+                "result": true,
+                "reason": ""
+              }
+            }
+
+## Turn On Ambient Light  [POST /api/1/vehicles/{vehicle_id}/command/ambient_light_on]
+Turn on the interior ambient light.
+
++ Request
+    + Headers
+
+            Authorization: Bearer {access_token}
+
++ Parameters
+
+    + vehicle_id: `1` (number) - The id of the Vehicle.
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+              "response": {
+                "result": true,
+                "reason": ""
+              }
+            }
+
+## Turn Off Ambient Light  [POST /api/1/vehicles/{vehicle_id}/command/ambient_light_off]
+Turn off the interior ambient light.
+
++ Request
+    + Headers
+
+            Authorization: Bearer {access_token}
+
++ Parameters
+
+    + vehicle_id: `1` (number) - The id of the Vehicle.
+
++ Response 200 (application/json)
+
+    + Attributes (object)
+        + result: `false` (required, boolean) - Success
+        + reason: `Already off` (optional, string) - Description of error
+
+# Data Structures
+
+## Vehicle (object)
++ id: `1` (required, number) - The id of the Vehicle
++ license_plate: `ab12345` (required, string) - The license plate of the vehicle
++ occupied: `false` (required, boolean) - A driver is logged in, in the vehicle
++ lat: `33.794839` (required, number) - Latitude
++ lon: `-84.401593` (required, number) - Longitude
++ online: `true` (required, boolean) - Connection to vehicle is available
