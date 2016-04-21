@@ -69,8 +69,9 @@ Returns the state of charge in the battery.
 + Response 200 (application/json)
     + Attributes (object)
         + charging_state: `Complete` (required, enum[string]) - The charging state of the vehicle.
-            + `Complete` - Charging cable connected but not charging
-            + `Charging` - Charging cable connected and charging is active
+            + Members
+                + `Complete` - Charging cable connected but not charging
+                + `Charging` - Charging cable connected and charging is active
         + fast_charger_present: `false` (required, boolean) - Connected to a fast-charger
         + battery_range: `123.4` (required, number) - Rated battery range in km
         + est_battery_range: `111.1` (required, number) - Estimated battery range in km, from driving pattern
@@ -85,8 +86,8 @@ Returns the state of charge in the battery.
         + charger_power: `22` (required, number) - Maximum kW (rounded down) of charger
         + time_to_full_charge: `1234` (required, number) - Time to battery is fully charged, in seconds
 
-## Climate Settings [GET /api/1/vehicles/{vehicle_id}/state/climate_state]
-Returns the current temperature and climate control state.
+## HVAC State [GET /api/1/vehicles/{vehicle_id}/state/hvac_state]
+Returns the current temperature and HVAC state.
 
 + Request
     + Headers
@@ -98,20 +99,13 @@ Returns the current temperature and climate control state.
     + vehicle_id: `1` (number) - The id of the Vehicle.
 
 + Response 200 (application/json)
-
-    + Body
-
-            {
-              "response": {
-                "inside_temp": 17.0,          // degC inside car
-                "outside_temp": 9.5,          // degC outside car or null
-                "driver_temp_setting": 22.6,  // degC of driver temperature setpoint
-                "passenger_temp_setting": 22.6, // degC of passenger temperature setpoint
-                "is_auto_conditioning_on": false, // apparently even if on
-                "is_front_defroster_on": false, // null or boolean as integer?
-                "fan_status": 0               // fan speed 0-6 or null
-              }
-            }
+    + Attributes (object)
+        + inside_temp: `21.0` (required, number) - Temperature inside vehicle, in degrees celcius
+        + outside_temp: `12.3` (required, number) - Temperature outside vehicle, in degrees celcius
+        + driver_temp_setting: `23.4` (required, number) - Temperature requested by driver, in degrees celcius
+        + passenger_temp_setting: `18.3` (required, number) - Temperature requested by passenger, in degrees celcius
+        + hvac_is_on: `true` (required, boolean) - Is HVAC system running
+        + demist_is_on: `false` (required, boolean) - Is front windshield demist running
 
 ## Location [GET /api/1/vehicles/{vehicle_id}/state/location]
 Returns the location and movement details of the vehicle.
@@ -126,7 +120,6 @@ Returns the location and movement details of the vehicle.
     + vehicle_id: `1` (number) - The id of the Vehicle.
 
 + Response 200 (application/json)
-
     + Attributes (object)
         + lat: `33.794839` (required, number) - Latitude
         + lon: `-84.401593` (required, number) - Longitude
@@ -147,18 +140,21 @@ Returns various information about the GUI settings of the car, such as unit form
     + vehicle_id: `1` (number) - The id of the Vehicle.
 
 + Response 200 (application/json)
-
-    + Body
-
-            {
-              "response": {
-                "gui_distance_units": "km/hr",
-                "gui_temperature_units": "C",
-                "gui_charge_rate_units": "km/hr",
-                "gui_24_hour_time": false,
-                "gui_range_display": "Rated"
-              }
-            }
+    + Attributes (object)
+        + gui_distance_units: `km/h` (required, enum[string]) - Distance units
+            + Members
+                + `km/h` - Kilometers per hour
+                + `mph` - Miles per hour
+        + gui_temperature_units: `C` (required, enum[string]) - Temperature units
+            + Members
+                + `C` - Celcius
+                + `F` - Farenheit
+        + gui_24_hour_time: `true` (required, boolean) - AM/PM or 24 hour time
+        + gui_range_display: `Estimated` (required, enum[string]) - Battery range to show
+            + Members
+                + `Estimated` - Estimated battery range, based on drinving pattern
+                + `Rated` - Rated battery range
+                + `Ideal` - Theoretical battery range
 
 ## Vehicle State [GET /api/1/vehicles/{vehicle_id}/state/vehicle_state]
 Returns the vehicle's physical state, such as which doors are open.
