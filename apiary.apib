@@ -148,7 +148,7 @@ Returns various information about the GUI settings of the car, such as unit form
         + gui_temperature_units: `C` (required, enum[string]) - Temperature units
             + Members
                 + `C` - Celcius
-                + `F` - Farenheit
+                + `F` - Fahrenheit
         + gui_24_hour_time: `true` (required, boolean) - AM/PM or 24 hour time
         + gui_range_display: `Estimated` (required, enum[string]) - Battery range to show
             + Members
@@ -169,24 +169,22 @@ Returns the vehicle's physical state, such as which doors are open.
     + vehicle_id: `1` (number) - The id of the Vehicle.
 
 + Response 200 (application/json)
-
-    + Body
-
-            {
-              "response": {
-                "df": false,                  // driver's side front door open
-                "dr": false,                  // driver's side rear door open
-                "pf": false,                  // passenger's side front door open
-                "pr": false,                  // passenger's side rear door open
-                "rt": false,                  // rear trunk is open
-                "car_verson": "1.19.42",      // car firmware version
-                "locked": true,               // car is locked
-                "charging": true,             // vehicle is charging
-                "mode": "ready2drive",        // "parked", "ready2drive", etc.
-                "est_battery_range": 155.79,  // range estimated from recent driving
-                "occupied": false,            // a driver is logged in, in the vehicle
-              }
-            }
+    + Attributes (object)
+        + driver_door_open: `false` (required, boolean) - Driver's door is open
+        + front_passenger_door_open: `false` (required, boolean) - Front passenger door is open
+        + rear_left_door_open: `false` (required, boolean) - Rear left door is open
+        + rear_right_door_open: `false` (required, boolean) - Rear right door is open
+        + fw_version: `1.0.27` (required, string) - Vehicle firmware version
+        + locked: `false` (required, boolean) - Vehicle is locked
+        + charging: `false` (required, boolean) - Vehicle is charging
+        + mode: `ready2drive` (required, enum[string]) - Vehicle mode
+            + Members
+                + `off` - All systems are powered down or in low power mode
+                + `parked` - All systems are on but vehicle cannot drive
+                + `ready2drive` - Vehicle is allowed to start driving
+                + `driving` - Vehicle is driving
+        + est_battery_range: `123.4` (required, number) - Estimated battery range in km, from driving pattern
+        + occupied: `true` (required, boolean) - A driver is logged in, in the vehicle
 
 ## Seat Sensors [GET /api/1/vehicles/{vehicle_id}/state/seat_sensors]
 Returns true or false, for each seat in the vehicle, indicating whether the seat is occupied.
@@ -201,7 +199,6 @@ Returns true or false, for each seat in the vehicle, indicating whether the seat
     + vehicle_id: `1` (number) - The id of the Vehicle.
 
 + Response 200 (application/json)
-
     + Attributes (object)
         + driver: `true` (required, boolean) - Driver's seat
         + front_passenger: `false` (required, boolean) - Front passenger seat
@@ -222,7 +219,6 @@ NOTE: We might want to expand on this information and provide details on how cri
     + vehicle_id: `1` (number) - The id of the Vehicle.
 
 + Response 200 (application/json)
-
     + Attributes (object)
         + F01: `true` (required, boolean) - Fuse 1 good
         + F02: `true` (required, boolean) - Fuse 2 good
@@ -246,7 +242,6 @@ Returns the state of the taximeter.
     + vehicle_id: `1` (number) - The id of the Vehicle.
 
 + Response 200 (application/json)
-
     + Attributes (object)
         + taximeter_is_active: `true` (required, boolean) - Taximeter is currently running, collecting data for a taxi trip.
 
@@ -268,15 +263,9 @@ Set the charge limit to the default value.
     + vehicle_id: `1` (number) - The id of the Vehicle.
 
 + Response 200 (application/json)
-
-    + Body
-
-            {
-              "response": {
-                "result": false,
-                "reason": "already_standard"
-              }
-            }
+    + Attributes (object)
+        + result: `false` (required, boolean) - Success
+        + reason: `Already standard` (optional, string) - Description of error
 
 ## Set Charge Limit [POST /api/1/vehicles/{vehicle_id}/command/set_charge_limit?percent={limit_value}]
 Set the charge limit to a custom percentage.
@@ -292,15 +281,9 @@ Set the charge limit to a custom percentage.
     + limit_value: `75` (number) - The percentage value
 
 + Response 200 (application/json)
-
-    + Body
-
-            {
-              "response": {
-                "result": true,
-                "reason": ""
-              }
-            }
+    + Attributes (object)
+        + result: `false` (required, boolean) - Success
+        + reason: `Value is out of bounds` (optional, string) - Description of error
 
 ## Start Charging [POST /api/1/vehicles/{vehicle_id}/command/charge_start]
 Start charging. Must be plugged in, have power available, and not have reached your charge limit.
@@ -315,15 +298,9 @@ Start charging. Must be plugged in, have power available, and not have reached y
     + vehicle_id: `1` (number) - The id of the Vehicle.
 
 + Response 200 (application/json)
-
-    + Body
-
-            {
-              "response": {
-                "result": true,
-                "reason": "" // "already_started" if a charge is in progress
-              }
-            }
+    + Attributes (object)
+        + result: `false` (required, boolean) - Success
+        + reason: `Already charging` (optional, string) - Description of error
 
 ## Stop Charging [POST /api/1/vehicles/{vehicle_id}/command/charge_stop]
 Stop charging. Must already be charging.
@@ -338,15 +315,9 @@ Stop charging. Must already be charging.
     + vehicle_id: `1` (number) - The id of the Vehicle.
 
 + Response 200 (application/json)
-
-    + Body
-
-            {
-              "response": {
-                "result": true,
-                "reason": "" // "not_charging" if a charge was not in progress
-              }
-            }
+    + Attributes (object)
+        + result: `false` (required, boolean) - Success
+        + reason: `Not charging` (optional, string) - Description of error
 
 ## Flash Lights [POST /api/1/vehicles/{vehicle_id}/command/flash_lights]
 Flash the lights once.
@@ -361,16 +332,9 @@ Flash the lights once.
     + vehicle_id: `1` (number) - The id of the Vehicle.
 
 + Response 200 (application/json)
-
-    + Body
-
-            {
-              "response": {
-                "result": true,
-                "reason": ""
-              }
-            }
-
+    + Attributes (object)
+        + result: `true` (required, boolean) - Success
+        + reason (optional, string) - Description of error
 
 ## Unlock Doors [POST /api/1/vehicles/{vehicle_id}/command/door_unlock]
 Unlock the car's doors.
@@ -385,15 +349,9 @@ Unlock the car's doors.
     + vehicle_id: `1` (number) - The id of the Vehicle.
 
 + Response 200 (application/json)
-
-    + Body
-
-            {
-              "response": {
-                "result": true,
-                "reason": ""
-              }
-            }
+    + Attributes (object)
+        + result: `false` (required, boolean) - Success
+        + reason: `Already unlocked` (optional, string) - Description of error
 
 ## Lock Doors [POST /api/1/vehicles/{vehicle_id}/command/door_lock]
 Lock the car's doors.
@@ -408,15 +366,9 @@ Lock the car's doors.
     + vehicle_id: `1` (number) - The id of the Vehicle.
 
 + Response 200 (application/json)
-
-    + Body
-
-            {
-              "response": {
-                "result": true,
-                "reason": ""
-              }
-            }
+    + Attributes (object)
+        + result: `false` (required, boolean) - Success
+        + reason: `Already locked` (optional, string) - Description of error
 
 ## Set Temperature [POST /api/1/vehicles/{vehicle_id}/command/set_temps?driver_temp={driver_degC}&passenger_temp={pass_degC}]
 Set the temperature target for the HVAC system.
@@ -433,15 +385,9 @@ Set the temperature target for the HVAC system.
     + pass_degC: `18.1` (number) - The desired temperature on the passenger's side in celcius.
 
 + Response 200 (application/json)
-
-    + Body
-
-            {
-              "response": {
-                "result": true,
-                "reason": ""
-              }
-            }
+    + Attributes (object)
+        + result: `true` (required, boolean) - Success
+        + reason (optional, string) - Description of error
 
 ## Start HVAC System [POST /api/1/vehicles/{vehicle_id}/command/hvac_start]
 Start the climate control system. Will cool or heat automatically, depending on set temperature.
@@ -456,15 +402,9 @@ Start the climate control system. Will cool or heat automatically, depending on 
     + vehicle_id: `1` (number) - The id of the Vehicle.
 
 + Response 200 (application/json)
-
-    + Body
-
-            {
-              "response": {
-                "result": true,
-                "reason": ""
-              }
-            }
+    + Attributes (object)
+        + result: `false` (required, boolean) - Success
+        + reason: `Already running` (optional, string) - Description of error
 
 ## Stop HVAC System  [POST /api/1/vehicles/{vehicle_id}/command/hvac_stop]
 Stop the climate control system.
@@ -479,16 +419,9 @@ Stop the climate control system.
     + vehicle_id: `1` (number) - The id of the Vehicle.
 
 + Response 200 (application/json)
-
-    + Body
-
-            {
-              "response": {
-                "result": true,
-                "reason": ""
-              }
-            }
-
+    + Attributes (object)
+        + result: `false` (required, boolean) - Success
+        + reason: `Already stopped` (optional, string) - Description of error
 
 ## Set Ambient Light [POST /api/1/vehicles/{vehicle_id}/command/ambient_light?color={color}&intensity={intensity}]
 Set the color and intensity of the interior ambient lighting.
@@ -655,15 +588,9 @@ Set the color and intensity of the interior ambient lighting.
     + intensity: `75` (number) - Percentage intensity of ambient light.
 
 + Response 200 (application/json)
-
-    + Body
-
-            {
-              "response": {
-                "result": true,
-                "reason": ""
-              }
-            }
+    + Attributes (object)
+        + result: `true` (required, boolean) - Success
+        + reason (optional, string) - Description of error
 
 ## Turn On Ambient Light  [POST /api/1/vehicles/{vehicle_id}/command/ambient_light_on]
 Turn on the interior ambient light.
@@ -678,15 +605,9 @@ Turn on the interior ambient light.
     + vehicle_id: `1` (number) - The id of the Vehicle.
 
 + Response 200 (application/json)
-
-    + Body
-
-            {
-              "response": {
-                "result": true,
-                "reason": ""
-              }
-            }
+    + Attributes (object)
+        + result: `false` (required, boolean) - Success
+        + reason: `Already on` (optional, string) - Description of error
 
 ## Turn Off Ambient Light  [POST /api/1/vehicles/{vehicle_id}/command/ambient_light_off]
 Turn off the interior ambient light.
@@ -701,7 +622,6 @@ Turn off the interior ambient light.
     + vehicle_id: `1` (number) - The id of the Vehicle.
 
 + Response 200 (application/json)
-
     + Attributes (object)
         + result: `false` (required, boolean) - Success
         + reason: `Already off` (optional, string) - Description of error
