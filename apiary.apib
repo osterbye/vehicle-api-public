@@ -1,16 +1,16 @@
 FORMAT: 1A
-HOST: http://api.eevo.one/
+HOST: http://api.spiri.io/
 
-# Eevo vehicle API
+# Spiri vehicle API
 
-This API enables monitoring and controlling the Eevo vehicle remotely.
+This API enables monitoring and controlling the Spiri vehicle remotely.
 
 # Group Authentication
 
 ## Tokens [/oauth/token{?grant_type,client_id,client_secret,email,password}]
 
 ### Get an Access Token [POST]
-Performs the login. Takes in a plain text email and password, matching the owner's login information for [https://fleets.eevo.one/user/login](https://fleets.eevo.one/user/login).
+Performs the login. Takes in a plain text email and password, matching the owner's login information for [https://fleets.spiri.io/user/login](https://fleets.spiri.io/user/login).
 
 Returns an `access_token` used to authenticate the user, by means of the `Authorization: Bearer {access_token}` header, which must be present in all future requests.
 
@@ -18,8 +18,8 @@ Returns an `access_token` used to authenticate the user, by means of the `Author
     + grant_type: `password` (string) - The type of oAuth grant. Always "password"
     + client_id: `aaa` (string) - The oAuth client ID
     + client_secret: `bbb` (string) - The oAuth client secret
-    + email: `mymail@eevo.one` (string) - The email for fleets.eevo.one
-    + password: `MyPassword` (string) - The password for fleets.eevo.one
+    + email: `mymail@spiri.io` (string) - The email for fleets.spiri.io
+    + password: `MyPassword` (string) - The password for fleets.spiri.io
 
 + Response 200 (application/json)
     + Attributes (object)
@@ -228,22 +228,6 @@ NOTE: We might want to expand on this information and provide details on how cri
         + F06: `true` (required, boolean) - Fuse 6 good
         + F07: `true` (required, boolean) - Fuse 7 good
         + F08: `true` (required, boolean) - Fuse 8 good
-
-## Taxi State [GET /api/1/vehicles/{vehicle_id}/state/taxi_state]
-Returns the state of the taximeter.
-
-+ Request
-    + Headers
-
-            Authorization: Bearer {access_token}
-
-+ Parameters
-
-    + vehicle_id: `1` (number) - The id of the Vehicle.
-
-+ Response 200 (application/json)
-    + Attributes (object)
-        + taximeter_is_active: `true` (required, boolean) - Taximeter is currently running, collecting data for a taxi trip.
 
 
 ## Commands [/api/1/vehicles/{vehicle_id}/command]
